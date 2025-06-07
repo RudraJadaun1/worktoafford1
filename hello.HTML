@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work to Afford Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Reset and Basic Setup */
+        :root {
+            --bg-light: #f0f2f5;
+            --bg-dark: #13141a;
+            --card-bg-light: rgba(255, 255, 255, 0.7);
+            --card-bg-dark: rgba(30, 31, 42, 0.7);
+            --text-light: #1c1c1e;
+            --text-dark: #e5e5e7;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary-color: #6b7280;
+            --secondary-dark: #a0aec0;
+            --input-bg-light: rgba(230, 230, 230, 0.6);
+            --input-bg-dark: rgba(0, 0, 0, 0.25);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --error-color: #ef4444;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            background-image: 
+                radial-gradient(circle at 1% 1%, rgba(59, 130, 246, 0.15) 0%, transparent 35%),
+                radial-gradient(circle at 99% 99%, rgba(236, 72, 153, 0.15) 0%, transparent 35%);
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        /* Page Transitions */
+        .page {
+            width: 100%;
+            max-width: 500px;
+            display: none; /* Hide pages by default */
+        }
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        header { text-align: center; margin-bottom: 2rem; }
+        header h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+        header p { font-size: 1rem; color: var(--secondary-color); }
+        body.dark-mode header p { color: var(--secondary-dark); }
+        
+        /* Larger screen typography */
+        @media (min-width: 640px) {
+            header h1 { font-size: 2.25rem; }
+        }
+
+        /* Card Styling */
+        .card {
+            background-color: var(--card-bg-light);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        @media (min-width: 640px) {
+            .card { padding: 1.75rem; }
+        }
+        body.dark-mode .card {
+            background-color: var(--card-bg-dark);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+        body.dark-mode .card h2 { border-color: rgba(255, 255, 255, 0.1); }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 1.25rem; position: relative; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .input-wrapper { position: relative; }
+        .currency-symbol { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: var(--secondary-color); pointer-events: none; }
+        body.dark-mode .currency-symbol { color: var(--secondary-dark); }
+        .form-group input { width: 100%; padding: 0.875rem 1rem; font-size: 1rem; border-radius: 0.5rem; border: 1px solid transparent; background-color: var(--input-bg-light); color: var(--text-light); transition: all 0.2s ease-in-out; }
+        .form-group input.has-symbol { padding-left: 2.5rem; }
+        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        body.dark-mode .form-group input { background-color: var(--input-bg-dark); color: var(--text-dark); }
+        
+        /* Currency Selector */
+        .currency-selector { display: flex; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border-color); margin-top: 0.5rem; }
+        body.dark-mode .currency-selector { border-color: rgba(255, 255, 255, 0.1); }
+        .currency-btn { flex: 1; padding: 0.75rem; background: transparent; border: none; color: var(--text-light); cursor: pointer; transition: background-color 0.2s ease; font-size: 0.9rem; }
+        body.dark-mode .currency-btn { color: var(--text-dark); }
+        .currency-btn.active { background-color: var(--primary-color); color: white; font-weight: 600; }
+
+        /* Buttons */
+        .btn { width: 100%; padding: 0.875rem 1.5rem; font-size: 1rem; font-weight: 600; border: none; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease-in-out; text-align: center; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-secondary { background: transparent; color: var(--primary-color); margin-top: 1rem; font-weight: 500; }
+        .btn-tertiary { background-color: var(--input-bg-light); color: var(--text-light); border: 1px solid var(--border-color); }
+        body.dark-mode .btn-tertiary { background-color: var(--input-bg-dark); color: var(--text-dark); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-tertiary:hover { background-color: rgba(0,0,0,0.05); }
+        body.dark-mode .btn-tertiary:hover { background-color: rgba(255,255,255,0.05); }
+
+        /* Responsive Button Group */
+        .button-group { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 1rem; }
+        @media (min-width: 400px) {
+            .button-group { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* Results & Insights Section */
+        .results-section { display: none; opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .results-section.show { display: block; opacity: 1; transform: translateY(0); }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; text-align: center; }
+        .result-item h3 { font-size: 0.9rem; font-weight: 500; color: var(--secondary-color); margin-bottom: 0.5rem; }
+        body.dark-mode .result-item h3 { color: var(--secondary-dark); }
+        .result-item p { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        @media (min-width: 640px) {
+             .result-item p { font-size: 1.75rem; }
+        }
+        .insights { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.9rem; }
+        body.dark-mode .insights { border-color: rgba(255, 255, 255, 0.1); }
+        .insights p { margin-bottom: 0.5rem; }
+        .fun-fact { font-style: italic; color: var(--secondary-color); }
+        body.dark-mode .fun-fact { color: var(--secondary-dark); }
+
+        /* Comparison List */
+        .comparison-list-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); }
+        body.dark-mode .comparison-list-item { border-color: rgba(255, 255, 255, 0.1); }
+        .comparison-list-item:last-child { border-bottom: none; }
+        .item-name { font-weight: 500; word-break: break-word; }
+        .item-hours { text-align: right; font-weight: 600; color: var(--primary-color); white-space: nowrap; }
+        .item-remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem; padding: 0.25rem; }
+        
+        /* Error Message Styling */
+        .error-message { color: var(--error-color); font-size: 0.8rem; margin-top: 0.3rem; display: none; }
+        input.invalid { border-color: var(--error-color); }
+        input.invalid:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); }
+
+        /* Theme Toggle */
+        .theme-switch-wrapper { position: fixed; top: 1rem; right: 1rem; z-index: 100; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 18px; left: 3px; position: absolute; transition: .4s; width: 18px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+    </style>
+</head>
+<body>
+
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle" />
+            <span class="slider"></span>
+        </label>
+    </div>
+    
+    <main class="container">
+        <!-- PAGE 1: SALARY DETAILS -->
+        <div id="salaryPage" class="page">
+            <header><h1>Work To Afford</h1><p>First, let's set up your earnings profile.</p></header>
+            <section class="card"><form id="salaryForm" novalidate>
+                <h2>Your Earnings Profile</h2>
+                <div class="form-group"><label>Currency</label><div class="currency-selector">
+                    <button type="button" class="currency-btn" data-currency="USD">$ (USD)</button>
+                    <button type="button" class="currency-btn" data-currency="INR">₹ (INR)</button>
+                </div></div>
+                <div class="form-group"><label for="monthlySalary">Monthly Salary</label><div class="input-wrapper">
+                    <span class="currency-symbol" id="salaryCurrencySymbol">$</span>
+                    <input type="number" id="monthlySalary" class="has-symbol" placeholder="e.g., 3000" min="1">
+                </div><div class="error-message" id="monthlySalaryError"></div></div>
+                <div class="form-group"><label for="hoursPerDay">Working Hours per Day</label>
+                    <input type="number" id="hoursPerDay" placeholder="e.g., 8" step="0.5" min="0.5">
+                    <div class="error-message" id="hoursPerDayError"></div></div>
+                <div class="form-group"><label for="daysPerWeek">Working Days per Week</label>
+                    <input type="number" id="daysPerWeek" placeholder="e.g., 5" max="7" min="1">
+                    <div class="error-message" id="daysPerWeekError"></div></div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save & Continue</button>
+            </form></section>
+        </div>
+
+        <!-- PAGE 2: CALCULATOR -->
+        <div id="calculatorPage" class="page">
+             <header><h1>Work To Afford</h1><p>How much time does it cost?</p></header>
+            <section class="card"><form id="itemForm" novalidate>
+                <h2>Item to Afford</h2>
+                 <div class="form-group"><label for="itemName">Item Name</label>
+                     <input type="text" id="itemName" placeholder="e.g., New Laptop">
+                     <div class="error-message" id="itemNameError"></div></div>
+                 <div class="form-group"><label for="itemPrice">Price of the item</label><div class="input-wrapper">
+                    <span class="currency-symbol" id="itemCurrencySymbol">$</span>
+                    <input type="number" id="itemPrice" class="has-symbol" placeholder="e.g., 999" min="0">
+                 </div><div class="error-message" id="itemPriceError"></div></div>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Calculate</button>
+                    <button type="button" id="addToListBtn" class="btn btn-tertiary">Add to List</button>
+                </div>
+            </form></section>
+            
+            <section id="resultsSection" class="card results-section">
+                <h2>Time Required for <span id="resultItemName">Item</span></h2>
+                <div class="results-grid">
+                    <div class="result-item"><h3>Total Hours</h3><p id="totalHours"></p></div>
+                    <div class="result-item"><h3>Work Days</h3><p id="workDays"></p></div>
+                    <div class="result-item"><h3>Work Weeks</h3><p id="workWeeks"></p></div>
+                </div>
+                <div class="insights"><p id="incomePercentage"></p><p class="fun-fact" id="funFact"></p></div>
+            </section>
+            
+            <section id="comparisonCard" class="card results-section">
+                <h2>Comparison List</h2>
+                <div id="comparisonList"></div>
+                <button id="clearListBtn" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.5rem">Clear List</button>
+            </section>
+
+            <button id="changeSalaryBtn" class="btn btn-secondary">Change Earnings Profile</button>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Element Refs ---
+        const salaryPage = document.getElementById('salaryPage'), calculatorPage = document.getElementById('calculatorPage');
+        const salaryForm = document.getElementById('salaryForm'), itemForm = document.getElementById('itemForm');
+        const currencyBtns = document.querySelectorAll('.currency-btn');
+        const monthlySalaryInput = document.getElementById('monthlySalary'), hoursPerDayInput = document.getElementById('hoursPerDay'), daysPerWeekInput = document.getElementById('daysPerWeek');
+        const itemNameInput = document.getElementById('itemName'), itemPriceInput = document.getElementById('itemPrice');
+        const salaryCurrencySymbol = document.getElementById('salaryCurrencySymbol'), itemCurrencySymbol = document.getElementById('itemCurrencySymbol');
+        const resultsSection = document.getElementById('resultsSection'), resultItemName = document.getElementById('resultItemName'), totalHoursEl = document.getElementById('totalHours'), workDaysEl = document.getElementById('workDays'), workWeeksEl = document.getElementById('workWeeks');
+        const incomePercentageEl = document.getElementById('incomePercentage'), funFactEl = document.getElementById('funFact');
+        const comparisonCard = document.getElementById('comparisonCard'), comparisonListEl = document.getElementById('comparisonList');
+        const changeSalaryBtn = document.getElementById('changeSalaryBtn'), addToListBtn = document.getElementById('addToListBtn'), clearListBtn = document.getElementById('clearListBtn'), themeToggle = document.getElementById('theme-toggle');
+
+        // --- Constants & State ---
+        const WEEKS_IN_MONTH = 4.34524;
+        const settingsKey = 'workToAffordSettings_v3', themeKey = 'workToAffordTheme', listKey = 'workToAffordList_v1';
+        let currentSettings = {}, comparisonList = [];
+        let lastCalculation = {};
+
+        // --- Page Navigation ---
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId)?.classList.add('active');
+        };
+
+        // --- Validation ---
+        const validateInput = (input, name, isText = false) => {
+            const errEl = document.getElementById(`${input.id}Error`);
+            input.classList.remove('invalid');
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+            
+            if (!input.value) { errEl.textContent = `${name} is required.`; }
+            else if (!isText && parseFloat(input.value) <= 0) { errEl.textContent = `Please enter a positive number for ${name}.`; }
+            else { return true; }
+            
+            input.classList.add('invalid');
+            errEl.style.display = 'block';
+            return false;
+        };
+        
+        // --- Data Persistence ---
+        const saveSettings = () => localStorage.setItem(settingsKey, JSON.stringify(currentSettings));
+        const saveList = () => localStorage.setItem(listKey, JSON.stringify(comparisonList));
+        
+        const loadData = () => {
+            const savedSettings = localStorage.getItem(settingsKey);
+            if (savedSettings) {
+                currentSettings = JSON.parse(savedSettings);
+                monthlySalaryInput.value = currentSettings.monthlySalary || '';
+                hoursPerDayInput.value = currentSettings.hoursPerDay || '';
+                daysPerWeekInput.value = currentSettings.daysPerWeek || '';
+                updateCurrencyUI(currentSettings.currency || 'USD');
+            }
+            const savedList = localStorage.getItem(listKey);
+            if (savedList) {
+                comparisonList = JSON.parse(savedList);
+                renderComparisonList();
+            }
+            return !!savedSettings;
+        };
+
+        // --- UI Updates ---
+        const updateCurrencyUI = (currency) => {
+            currentSettings.currency = currency;
+            const symbol = currency === 'INR' ? '₹' : '$';
+            currencyBtns.forEach(b => b.classList.toggle('active', b.dataset.currency === currency));
+            salaryCurrencySymbol.textContent = itemCurrencySymbol.textContent = symbol;
+        };
+        const formatNumber = (num) => parseFloat(num.toFixed(2)).toLocaleString();
+
+        const renderComparisonList = () => {
+            comparisonListEl.innerHTML = '';
+            if (comparisonList.length === 0) {
+                comparisonCard.classList.remove('show');
+                return;
+            }
+            comparisonList.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'comparison-list-item';
+                itemEl.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-hours">${formatNumber(item.hours)} hrs</span>
+                    <button class="item-remove-btn" data-index="${index}" title="Remove item">&times;</button>
+                `;
+                comparisonListEl.appendChild(itemEl);
+            });
+            comparisonCard.classList.add('show');
+        };
+        
+        const getFunFact = (hours) => {
+            const facts = [
+                { max: 1, text: "you could brew a few cups of coffee." },
+                { max: 3, text: "you could watch a feature-length movie." },
+                { max: 8, text: "that's a full night's sleep!" },
+                { max: 24, text: "you could fly from New York to Sydney." },
+                { max: 40, text: "that's an entire work week for many." },
+                { max: 168, text: "that's enough time to read 'War and Peace'." },
+                { max: 720, text: "a whole month has gone by!" }
+            ];
+            const fact = facts.find(f => hours <= f.max) || { text: "you could accomplish something amazing!" };
+            return `In that time, ${fact.text}`;
+        };
+
+        // --- Event Handlers ---
+        const handleSalarySubmit = (e) => {
+            e.preventDefault();
+            const isValid = [
+                validateInput(monthlySalaryInput, 'Monthly Salary'),
+                validateInput(hoursPerDayInput, 'Hours per Day'),
+                validateInput(daysPerWeekInput, 'Days per Week')
+            ].every(Boolean);
+
+            if (isValid) {
+                currentSettings = { ...currentSettings, monthlySalary: monthlySalaryInput.value, hoursPerDay: hoursPerDayInput.value, daysPerWeek: daysPerWeekInput.value };
+                saveSettings();
+                showPage('calculatorPage');
+            }
+        };
+        
+        const handleCalculation = (e) => {
+            e.preventDefault();
+            const isValid = [validateInput(itemNameInput, 'Item Name', true), validateInput(itemPriceInput, 'Item Price')].every(Boolean);
+            if (!isValid) return;
+
+            const { monthlySalary, hoursPerDay, daysPerWeek } = currentSettings;
+            const hourlyWage = parseFloat(monthlySalary) / (WEEKS_IN_MONTH * parseFloat(daysPerWeek) * parseFloat(hoursPerDay));
+            if (hourlyWage <= 0) return;
+
+            const itemPrice = parseFloat(itemPriceInput.value);
+            const totalHours = itemPrice / hourlyWage;
+            
+            lastCalculation = { name: itemNameInput.value, price: itemPrice, hours: totalHours };
+
+            resultItemName.textContent = lastCalculation.name;
+            totalHoursEl.textContent = formatNumber(totalHours);
+            workDaysEl.textContent = formatNumber(totalHours / parseFloat(hoursPerDay));
+            workWeeksEl.textContent = formatNumber(totalHours / (parseFloat(hoursPerDay) * parseFloat(daysPerWeek)));
+            
+            const perc = (itemPrice / parseFloat(monthlySalary)) * 100;
+            incomePercentageEl.textContent = `This item represents ${formatNumber(perc)}% of your monthly income.`;
+            funFactEl.textContent = getFunFact(totalHours);
+            
+            resultsSection.classList.add('show');
+        };
+
+        const handleAddToList = () => {
+            if (!lastCalculation.name) {
+                const modal = document.createElement('div');
+                modal.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background-color:#333; color:white; padding:10px 20px; border-radius:8px; z-index:1000;";
+                modal.textContent = "Please calculate first.";
+                document.body.appendChild(modal);
+                setTimeout(() => modal.remove(), 3000);
+                return;
+            }
+            comparisonList.push({ name: lastCalculation.name, hours: lastCalculation.hours });
+            saveList();
+            renderComparisonList();
+        };
+
+        const handleListActions = (e) => {
+            if (e.target.matches('.item-remove-btn')) {
+                comparisonList.splice(e.target.dataset.index, 1);
+                saveList();
+                renderComparisonList();
+            }
+            if (e.target.matches('#clearListBtn')) {
+                const modal = document.createElement('div');
+                modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1001;";
+                modal.innerHTML = `
+                    <div style="background:var(--card-bg-light); color:var(--text-light); padding:20px; border-radius:8px; text-align:center;">
+                        <p>Clear the entire list?</p>
+                        <div style="margin-top:20px;">
+                            <button id="confirmClear" style="padding:8px 16px; margin-right:10px; border:none; border-radius:5px; background:var(--error-color); color:white; cursor:pointer;">Yes, Clear</button>
+                            <button id="cancelClear" style="padding:8px 16px; border:1px solid var(--border-color); border-radius:5px; background:transparent; color:var(--text-light); cursor:pointer;">Cancel</button>
+                        </div>
+                    </div>`;
+                if(document.body.classList.contains('dark-mode')){
+                    modal.querySelector('div').style.background = 'var(--card-bg-dark)';
+                    modal.querySelector('div').style.color = 'var(--text-dark)';
+                    modal.querySelector('#cancelClear').style.color = 'var(--text-dark)';
+                    modal.querySelector('#cancelClear').style.borderColor = 'var(--border-color)';
+                }
+                document.body.appendChild(modal);
+
+                document.getElementById('confirmClear').onclick = () => {
+                    comparisonList = [];
+                    saveList();
+                    renderComparisonList();
+                    modal.remove();
+                };
+                document.getElementById('cancelClear').onclick = () => modal.remove();
+            }
+        };
+        
+        // --- Theme Toggling ---
+        const applyTheme = (theme) => {
+            document.body.classList.toggle('dark-mode', theme === 'dark');
+            themeToggle.checked = theme === 'dark';
+        };
+        const toggleTheme = () => {
+            const newTheme = themeToggle.checked ? 'dark' : 'light';
+            localStorage.setItem(themeKey, newTheme);
+            applyTheme(newTheme);
+        };
+        const loadTheme = () => {
+            const savedTheme = localStorage.getItem(themeKey);
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(savedTheme || (systemPrefersDark ? 'dark' : 'light'));
+        };
+
+        // --- Initial Load & Listeners ---
+        loadTheme();
+        if (loadData()) { showPage('calculatorPage'); }
+        else { updateCurrencyUI('USD'); showPage('salaryPage'); }
+        
+        salaryForm.addEventListener('submit', handleSalarySubmit);
+        itemForm.addEventListener('submit', handleCalculation);
+        changeSalaryBtn.addEventListener('click', () => showPage('salaryPage'));
+        addToListBtn.addEventListener('click', handleAddToList);
+        document.getElementById('calculatorPage').addEventListener('click', handleListActions);
+        themeToggle.addEventListener('change', toggleTheme);
+        currencyBtns.forEach(btn => btn.addEventListener('click', () => updateCurrencyUI(btn.dataset.currency)));
+    });
+    </script>
+</body>
+</html>
